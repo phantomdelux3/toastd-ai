@@ -127,6 +127,17 @@ export function ChatView() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Modern side lights — focused light rails on the left & right edges */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute top-0 -left-32 h-full w-[440px] bg-gradient-to-r from-rose-500/30 via-rose-500/10 to-transparent blur-[110px] animate-light-pulse" />
+        <div className="absolute top-0 -right-32 h-full w-[440px] bg-gradient-to-l from-fuchsia-500/28 via-fuchsia-500/10 to-transparent blur-[110px] animate-light-pulse-slow" />
+        {/* soft warm wash near the bottom composer */}
+        <div className="absolute -bottom-40 left-1/2 -translate-x-1/2 h-[420px] w-[80%] bg-orange-400/10 blur-[140px] rounded-full" />
+        {/* crisp accent beams hugging each edge */}
+        <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-rose-400/40 to-transparent" />
+        <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-fuchsia-400/35 to-transparent" />
+      </div>
+
       <header className="sticky top-0 z-10 backdrop-blur-xl bg-black/40 border-b border-white/[0.06]">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
           <button
@@ -136,10 +147,13 @@ export function ChatView() {
             <ArrowLeft className="size-4" /> Home
           </button>
           <div className="flex-1 flex justify-center">
-            <div className="flex items-center gap-2 text-sm font-semibold tracking-tight">
-              <span className="brand-mark inline-block size-5 rounded-md shadow-[0_2px_12px_-2px_rgba(244,63,94,0.6)]" />
-              <span>toastd</span>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/toastdlogo.png"
+              alt="Toastd"
+              className="h-5 w-auto select-none"
+              draggable={false}
+            />
           </div>
           <div className="flex items-center gap-1.5 text-xs text-white/45">
             <span
@@ -266,8 +280,9 @@ export function ChatView() {
 
 function AssistantAvatar() {
   return (
-    <div className="hidden sm:flex shrink-0 size-8 mt-1 items-center justify-center rounded-xl brand-mark shadow-[0_4px_16px_-4px_rgba(244,63,94,0.5)]">
-      <Sparkles className="size-4 text-white" />
+    <div className="hidden sm:flex shrink-0 size-8 mt-1 items-center justify-center rounded-xl bg-white/[0.04] border border-white/10 shadow-[0_4px_16px_-4px_rgba(244,63,94,0.5)] overflow-hidden">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logo.png" alt="Toastd" className="size-5 object-contain" draggable={false} />
     </div>
   );
 }

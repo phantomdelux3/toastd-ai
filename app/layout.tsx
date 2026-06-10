@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Instrument_Serif } from "next/font/google";
 import "./globals.css";
+import { NavProgressProvider } from "@/components/NavProgress";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -29,11 +30,24 @@ export default function RootLayout({
   return (
     <html lang="en" className={`dark ${inter.variable} ${instrumentSerif.variable}`}>
       <body className="bg-darkbg text-white antialiased font-sans relative overflow-x-hidden">
-        {/* Ambient gradient orbs — fixed so they persist across routes */}
+        {/* Ambient lighting + grid — fixed so they persist across routes */}
         <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-          <div className="absolute -top-40 -left-32 size-[520px] rounded-full bg-rose-500/20 blur-[120px]" />
-          <div className="absolute top-1/3 -right-40 size-[560px] rounded-full bg-fuchsia-500/15 blur-[140px]" />
-          <div className="absolute bottom-[-200px] left-1/3 size-[600px] rounded-full bg-orange-400/10 blur-[140px]" />
+          {/* Barely-visible modern grey grid */}
+          <div className="absolute inset-0 bg-grid" />
+
+          {/* Side lights — layered glows that wash in from the edges */}
+          <div className="absolute -top-48 -left-40 size-[560px] rounded-full bg-rose-500/25 blur-[130px]" />
+          <div className="absolute -top-24 left-1/4 size-[420px] rounded-full bg-fuchsia-500/12 blur-[150px]" />
+          <div className="absolute top-1/4 -right-48 size-[600px] rounded-full bg-fuchsia-500/18 blur-[150px]" />
+          <div className="absolute top-1/2 -left-56 size-[480px] rounded-full bg-orange-400/12 blur-[160px]" />
+          <div className="absolute bottom-[-220px] left-1/3 size-[640px] rounded-full bg-orange-400/12 blur-[150px]" />
+          {/* Thin accent beams hugging the left & right edges */}
+          <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent via-rose-400/25 to-transparent" />
+          <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-fuchsia-400/20 to-transparent" />
+
+          {/* Top vignette so the lights bloom from above */}
+          <div className="absolute inset-x-0 top-0 h-[420px] bg-gradient-to-b from-white/[0.025] to-transparent" />
+
           {/* Subtle grain */}
           <div
             className="absolute inset-0 opacity-[0.035] mix-blend-overlay"
@@ -43,7 +57,7 @@ export default function RootLayout({
             }}
           />
         </div>
-        {children}
+        <NavProgressProvider>{children}</NavProgressProvider>
       </body>
     </html>
   );
