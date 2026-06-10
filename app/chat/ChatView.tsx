@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft, ArrowUp, Loader2, Sparkles } from "lucide-react";
 import { QuestionCard } from "@/components/QuestionCard";
 import { MarkdownMessage } from "@/components/MarkdownMessage";
-import { tryExtractQuestion } from "@/lib/parseAssistant";
+import { tryExtractQuestion, looksLikeQuestionInProgress } from "@/lib/parseAssistant";
 import type { ChatTurn } from "@/lib/types";
 
 type Session = { sessionId: string; userId: string };
@@ -174,7 +174,8 @@ export function ChatView() {
               Starting conversation…
             </div>
           )}
-          {turns.map((turn) => {
+          {turns.map((turn, idx) => {
+            const streaming = pending && idx === turns.length - 1;
             if (turn.role === "user") {
               return (
                 <div key={turn.id} className="flex justify-end animate-fade-in-up">
@@ -203,7 +204,7 @@ export function ChatView() {
               <div key={turn.id} className="flex gap-3 animate-fade-in-up">
                 <AssistantAvatar />
                 <div className="max-w-[92%] w-full rounded-2xl rounded-tl-md bg-white/[0.04] border border-white/[0.06] px-4 py-3 backdrop-blur-sm">
-                  {turn.text ? (
+                  {turn.text && !(streaming && looksLikeQuestionInProgress(turn.text)) ? (
                     <MarkdownMessage text={turn.text} />
                   ) : (
                     <div className="flex items-center gap-1 text-white/60 text-sm py-1">

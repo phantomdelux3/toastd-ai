@@ -42,6 +42,21 @@ export function tryExtractQuestion(raw: string): QuestionPayload | null {
 }
 
 /**
+ * Returns true if the streaming text looks like it's building a question
+ * payload (a fenced ```json block or a bare JSON object). Used to suppress
+ * rendering the raw JSON mid-stream — we show a placeholder until the full
+ * payload arrives and can be parsed into a QuestionCard.
+ *
+ * The agent only emits fenced code / bare JSON for question payloads; plain
+ * answers are markdown, so this won't hide normal responses.
+ */
+export function looksLikeQuestionInProgress(raw: string): boolean {
+  const t = raw.trimStart();
+  if (!t) return false;
+  return t.startsWith("```") || t.startsWith("{");
+}
+
+/**
  * Returns true if the raw text is *probably* a complete question payload
  * (used during streaming to decide if we should switch to QuestionCard).
  * Looser than tryExtractQuestion — checks for closing brace + bracket.
