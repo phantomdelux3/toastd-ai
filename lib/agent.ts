@@ -8,7 +8,19 @@ const SERVICE_URL = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/$
 
 let authClient: GoogleAuth | null = null;
 function getAuth() {
-  if (!authClient) {
+  if (authClient) return authClient;
+
+  // On Cloudflare Workers there is no filesystem and no ADC metadata server,
+  // so credentials must be supplied as a JSON string via env. Locally, leave
+  // the var unset and we fall back to Application Default Credentials.
+  const raw = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  if (raw) {
+    const credentials = JSON.parse(raw);
+    authClient = new GoogleAuth({
+      credentials,
+      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+    });
+  } else {
     authClient = new GoogleAuth({
       scopes: ["https://www.googleapis.com/auth/cloud-platform"],
     });
@@ -18,7 +30,7 @@ function getAuth() {
 
 async function bearer(): Promise<string> {
   const token = await getAuth().getAccessToken();
-  if (!token) throw new Error("Could not obtain GCP access token. Run `gcloud auth application-default login`.");
+  if (!token) throw new Error("Could not obtain GCP access token. Run `gcloud auth application-default login` (local) or set GOOGLE_SERVICE_ACCOUNT_KEY (deployed).");
   return token;
 }
 

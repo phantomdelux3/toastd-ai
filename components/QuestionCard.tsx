@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { PencilLine, X } from "lucide-react";
+import { ArrowUp, Check, PencilLine, X } from "lucide-react";
 import type { QuestionPayload } from "@/lib/types";
 
 export function QuestionCard({
@@ -33,9 +33,10 @@ export function QuestionCard({
   return (
     <div
       role="group"
-      className="flex w-full flex-col overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#141414] shadow-[0_4px_24px_0_rgba(0,0,0,0.4)] sm:rounded-3xl"
+      className="flex w-full flex-col overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#141414]/90 backdrop-blur-xl shadow-[0_8px_40px_-8px_rgba(0,0,0,0.6)] sm:rounded-3xl animate-fade-in-up"
     >
-      <div className="relative flex items-center gap-1 p-4 pb-1">
+      <div className="relative flex items-center gap-2 p-4 pb-2">
+        <div className="size-1.5 rounded-full bg-gradient-to-br from-rose-400 to-fuchsia-400" />
         <h3 className="flex-1 min-w-0 text-balance font-semibold leading-6 text-white sm:text-lg sm:leading-7">
           {question.title}
         </h3>
@@ -61,18 +62,30 @@ export function QuestionCard({
               tabIndex={0}
               disabled={disabled}
               onClick={() => pick(opt.label, idx)}
-              className={`group/row flex min-h-[55px] md:min-h-[70px] w-full items-center justify-between gap-3 px-3 py-2 text-left transition sm:gap-4 sm:py-4 rounded-xl
-                ${selected === idx ? "bg-white/10" : "hover:bg-white/[0.04]"}
+              className={`group/row flex min-h-[55px] md:min-h-[70px] w-full items-center justify-between gap-3 px-3 py-2 text-left transition-all duration-200 sm:gap-4 sm:py-4 rounded-xl
+                ${
+                  selected === idx
+                    ? "bg-gradient-to-r from-rose-500/15 via-fuchsia-500/10 to-orange-400/5 ring-1 ring-white/15"
+                    : "hover:bg-white/[0.04] hover:translate-x-0.5"
+                }
                 disabled:cursor-default disabled:opacity-60`}
             >
               <span className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
                 <span
                   aria-hidden="true"
-                  className="flex size-7 shrink-0 items-center justify-center rounded-full transition-colors sm:size-8 bg-white/10 text-white/60"
+                  className={`flex size-7 shrink-0 items-center justify-center rounded-full transition-all sm:size-8 ${
+                    selected === idx
+                      ? "brand-mark text-white"
+                      : "bg-white/10 text-white/60 group-hover/row:bg-white/15 group-hover/row:text-white/85"
+                  }`}
                 >
-                  <span className="text-xs leading-4 tabular-nums sm:text-sm sm:leading-5">
-                    {idx + 1}
-                  </span>
+                  {selected === idx ? (
+                    <Check className="size-3.5 sm:size-4" />
+                  ) : (
+                    <span className="text-xs leading-4 tabular-nums sm:text-sm sm:leading-5">
+                      {idx + 1}
+                    </span>
+                  )}
                 </span>
                 <span className="flex min-w-0 flex-col items-start">
                   <span className="text-sm font-medium leading-5 text-white">
@@ -83,6 +96,14 @@ export function QuestionCard({
                   )}
                 </span>
               </span>
+              <ArrowUp
+                aria-hidden
+                className={`size-4 rotate-45 shrink-0 transition-all ${
+                  selected === idx
+                    ? "text-white/80 translate-x-0"
+                    : "text-white/0 group-hover/row:text-white/60 group-hover/row:translate-x-0 -translate-x-1"
+                }`}
+              />
             </button>
             {idx < question.options.length - 1 && (
               <div aria-hidden="true" className="px-3">
@@ -124,9 +145,10 @@ export function QuestionCard({
             type="button"
             onClick={submitCustom}
             disabled={disabled || !custom.trim()}
-            className="group/skip flex h-9 shrink-0 items-center justify-center rounded-full border border-white/15 bg-transparent px-4 text-sm font-medium text-white/85 hover:bg-white/5 transition disabled:opacity-40 disabled:cursor-not-allowed"
+            aria-label="Send custom answer"
+            className="group/skip flex size-9 shrink-0 items-center justify-center rounded-full bg-white text-black hover:bg-white/90 active:scale-95 transition disabled:opacity-30 disabled:cursor-not-allowed disabled:bg-white/15 disabled:text-white/40"
           >
-            Send
+            <ArrowUp className="size-4" />
           </button>
         </div>
       </div>

@@ -2,6 +2,10 @@ node_modules
 .next
 out
 .env.local
+.dev.vars
+.open-next
+.wrangler
+cloudflare-env.d.ts
 .DS_Store
 *.tsbuildinfo
 next-env.d.ts

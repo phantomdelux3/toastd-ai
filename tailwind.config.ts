@@ -17,8 +17,12 @@ const config: Config = {
         "info-500": "#3b82f6",
       },
       fontFamily: {
-        sans: ["ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "Helvetica", "Arial", "sans-serif"],
-        display: ["Georgia", "serif"],
+        sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "Helvetica", "Arial", "sans-serif"],
+        display: ["var(--font-display)", "Georgia", "serif"],
+      },
+      boxShadow: {
+        "input-glow": "0 0 0 1px rgba(255,255,255,0.08), 0 8px 40px -8px rgba(244, 63, 94, 0.25)",
+        "input-glow-focus": "0 0 0 1px rgba(255,255,255,0.25), 0 8px 60px -8px rgba(244, 63, 94, 0.45)",
       },
     },
   },

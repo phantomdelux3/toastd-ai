@@ -1,3 +1,5 @@
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -6,5 +8,8 @@ const nextConfig = {
     ],
   },
 };
+
+// Makes Cloudflare bindings (vars/secrets/etc.) available during `next dev`.
+initOpenNextCloudflareForDev();
 
 export default nextConfig;

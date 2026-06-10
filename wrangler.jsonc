@@ -1,0 +1,28 @@
+/**
+ * Cloudflare Workers config for the Toastd frontend (Next.js via @opennextjs/cloudflare).
+ *
+ * - Non-secret env values live under `vars`.
+ * - Secrets (the Google service account key) are set via:
+ *     npx wrangler secret put GOOGLE_SERVICE_ACCOUNT_KEY
+ *
+ * Deploy with:  npm run deploy
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ai-toastd-frontend",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-03-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": ".open-next/assets"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "GCP_PROJECT_NUMBER": "698151665057",
+    "GCP_LOCATION": "us-central1",
+    "REASONING_ENGINE_ID": "8982788447336923136"
+  }
+}
