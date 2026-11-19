@@ -29,8 +29,8 @@ export type ProductCardData = {
   variants?: string[];
   available?: boolean;
   category?: string | null;
-  /** The search query that produced this card (used for "more like this"). */
-  query?: string;
+  /** "query" = matched the requested product type; "category" = same-category fallback. */
+  match?: "query" | "category";
 };
 
 export type MerchantCardData = {
@@ -39,6 +39,8 @@ export type MerchantCardData = {
   website?: string | null;
   logo_url?: string | null;
   sector?: string | null;
+  /** Cuanto category the store was found in. */
+  category?: string | null;
   url: string;
 };
 
@@ -59,5 +61,7 @@ export type PicksPayload = {
   toastd_more: string[];
   cuanto: Pick[];
   cuanto_more: string[];
+  /** Same-category products shown when nothing matched the product type. */
+  cuanto_explore: string[];
   merchants: Pick[];
 };

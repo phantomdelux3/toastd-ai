@@ -67,6 +67,7 @@ export function extractPicks(raw: string): {
         toastd_more: asIds(o.toastd_more),
         cuanto: asPicks(o.cuanto),
         cuanto_more: asIds(o.cuanto_more),
+        cuanto_explore: asIds(o.cuanto_explore),
         merchants: asPicks(o.merchants),
       },
     };
@@ -116,7 +117,7 @@ function toProduct(raw: any, linkOk: (u: string) => boolean): ProductCardData | 
       : [],
     available: raw.available !== false,
     category: str(raw.category),
-    query: typeof raw.query === "string" ? raw.query : "",
+    match: raw.match === "category" ? "category" : "query",
   };
 }
 
@@ -130,6 +131,7 @@ function toMerchant(raw: any): MerchantCardData | null {
     website: str(raw.website),
     logo_url: img(raw.logo_url),
     sector: str(raw.sector),
+    category: str(raw.category),
     url,
   };
 }
@@ -168,10 +170,25 @@ export type ResolvedSection = {
 
 const MAX_MORE = 6;
 
+function take(
+  cards: Record<string, ProductCardData>,
+  ids: string[],
+  used: Set<string>
+): ProductCardData[] {
+  const out: ProductCardData[] = [];
+  for (const id of ids) {
+    if (cards[id] && !used.has(id)) {
+      used.add(id);
+      out.push(cards[id]);
+    }
+  }
+  return out;
+}
+
 /**
- * Joins pick ids with cached cards (unknown ids are dropped). "More" is the
- * model's *_more ids, topped up with other results from the same search
- * queries as its main picks — on-topic by construction, zero model tokens.
+ * Joins pick ids with cached cards (unknown ids are dropped). Only ids the
+ * model explicitly chose are shown, so every product on screen was vetted by
+ * the model for relevance and suitability.
  */
 export function resolveSection(
   cards: Record<string, ProductCardData>,
@@ -186,27 +203,7 @@ export function resolveSection(
       main.push({ card: cards[p.id], why: p.why });
     }
   }
-
-  let more: ProductCardData[] = [];
-  for (const id of moreIds) {
-    if (cards[id] && !used.has(id)) {
-      used.add(id);
-      more.push(cards[id]);
-    }
-  }
-
-  // Top up with other results from the same queries as the main picks.
-  if (more.length < MAX_MORE && main.length > 0) {
-    const queries = new Set(main.map((m) => m.card.query).filter(Boolean));
-    for (const c of Object.values(cards)) {
-      if (more.length >= MAX_MORE) break;
-      if (!used.has(c.id) && !!c.query && queries.has(c.query)) {
-        used.add(c.id);
-        more.push(c);
-      }
-    }
-  }
-  return { main, more: more.slice(0, MAX_MORE) };
+  return { main, more: take(cards, moreIds, used).slice(0, MAX_MORE) };
 }
 
 export function resolveMerchants(
@@ -222,4 +219,44 @@ export function resolveMerchants(
     }
   }
   return out;
+}
+
+export type ResolvedCuanto = ResolvedSection & {
+  merchants: { card: MerchantCardData; why?: string }[];
+  /**
+   * Set when nothing matched the requested product type and we are showing
+   * same-category products / stores instead: the category to explore.
+   */
+  exploreCategory: string | null;
+};
+
+/** Cuanto section: exact matches, or a same-category "explore" fallback. */
+export function resolveCuanto(cache: CardCache, picks: PicksPayload): ResolvedCuanto {
+  const exact = resolveSection(cache.cuanto, picks.cuanto, picks.cuanto_more);
+  const merchants = resolveMerchants(cache.merchants, picks.merchants);
+  // Picks that are themselves category-browse items do not count as matches.
+  const hasExact = [...exact.main.map((m) => m.card), ...exact.more].some(
+    (c) => c.match !== "category"
+  );
+  if (hasExact) return { ...exact, merchants, exploreCategory: null };
+
+  const used = new Set([...exact.main.map((m) => m.card.id), ...exact.more.map((c) => c.id)]);
+  const explore = [
+    ...exact.main.map((m) => m.card),
+    ...exact.more,
+    ...take(cache.cuanto, picks.cuanto_explore, used),
+  ];
+  if (explore.length === 0 && merchants.length === 0) {
+    return { main: [], more: [], merchants: [], exploreCategory: null };
+  }
+  const exploreCategory =
+    explore.find((c) => c.category)?.category ??
+    merchants.find((m) => m.card.category)?.card.category ??
+    "this category";
+  return {
+    main: explore.slice(0, 6).map((card) => ({ card })),
+    more: explore.slice(6, 6 + MAX_MORE),
+    merchants,
+    exploreCategory,
+  };
 }

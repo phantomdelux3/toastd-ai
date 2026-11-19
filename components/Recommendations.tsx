@@ -1,8 +1,8 @@
 "use client";
 
-import { ExternalLink, ShoppingBag, Store, Tag } from "lucide-react";
+import { ExternalLink, Info, ShoppingBag, Store, Tag } from "lucide-react";
 import type { CardCache, MerchantCardData, PicksPayload, ProductCardData } from "@/lib/types";
-import { resolveMerchants, resolveSection } from "@/lib/picks";
+import { resolveCuanto, resolveSection } from "@/lib/picks";
 
 type Tone = "toastd" | "cuanto";
 
@@ -156,11 +156,13 @@ function Section({
   main,
   more,
   merchants = [],
+  exploreCategory = null,
 }: {
   tone: Tone;
   main: { card: ProductCardData; why?: string }[];
   more: ProductCardData[];
   merchants?: { card: MerchantCardData; why?: string }[];
+  exploreCategory?: string | null;
 }) {
   if (main.length === 0 && more.length === 0 && merchants.length === 0) return null;
   const t = TONE[tone];
@@ -182,6 +184,16 @@ function Section({
         <span className="text-[10px] uppercase tracking-wider text-white/40">{t.badge}</span>
       </div>
 
+      {exploreCategory && (
+        <p className="mx-3 mb-3 flex items-start gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-xs leading-5 text-white/70">
+          <Info className={`mt-0.5 size-3.5 shrink-0 ${t.accent}`} />
+          <span>
+            No products available for this product type. Instead, you can explore{" "}
+            <span className="font-medium text-white">{exploreCategory}</span>:
+          </span>
+        </p>
+      )}
+
       {main.length > 0 && (
         <div className="grid grid-cols-2 gap-2.5 px-3 pb-3 sm:grid-cols-3">
           {main.map((m) => (
@@ -192,7 +204,9 @@ function Section({
 
       {more.length > 0 && (
         <div className="pb-3">
-          <p className="px-4 pb-2 text-[11px] uppercase tracking-wider text-white/40">More like this</p>
+          <p className="px-4 pb-2 text-[11px] uppercase tracking-wider text-white/40">
+            {exploreCategory ? `More in ${exploreCategory}` : "More like this"}
+          </p>
           <div className="flex snap-x gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:thin]">
             {more.map((c) => (
               <MiniCard key={c.id} card={c} tone={tone} />
@@ -222,8 +236,8 @@ function Section({
 /** Renders a picks payload as structured Toastd + Cuanto sections. */
 export function Recommendations({ picks, cache }: { picks: PicksPayload; cache: CardCache }) {
   const toastd = resolveSection(cache.toastd, picks.toastd, picks.toastd_more);
-  const cuanto = resolveSection(cache.cuanto, picks.cuanto, picks.cuanto_more);
-  const merchants = resolveMerchants(cache.merchants, picks.merchants);
+  const cuanto = resolveCuanto(cache, picks);
+  const merchants = cuanto.merchants;
   const nothing =
     toastd.main.length + toastd.more.length + cuanto.main.length + cuanto.more.length + merchants.length === 0;
 
@@ -235,7 +249,13 @@ export function Recommendations({ picks, cache }: { picks: PicksPayload; cache: 
         </div>
       )}
       <Section tone="toastd" main={toastd.main} more={toastd.more} />
-      <Section tone="cuanto" main={cuanto.main} more={cuanto.more} merchants={merchants} />
+      <Section
+        tone="cuanto"
+        main={cuanto.main}
+        more={cuanto.more}
+        merchants={merchants}
+        exploreCategory={cuanto.exploreCategory}
+      />
       {picks.outro && !nothing && <p className="px-1 text-sm text-white/60">{picks.outro}</p>}
     </div>
   );
