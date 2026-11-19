@@ -4,6 +4,18 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 
+/**
+ * The agent sometimes emits product headings as `### **Name**(https://…)`
+ * instead of `### **[Name](https://…)**`, which renders the raw URL as text.
+ * Rewrite that shape into a proper markdown link.
+ */
+function normalizeHeadingLinks(md: string): string {
+  return md.replace(
+    /^(#{1,6}[ \t]*)\*\*([^*\n]+?)\*\*[ \t]*\((https?:\/\/[^\s)]+)\)/gm,
+    "$1**[$2]($3)**"
+  );
+}
+
 export function MarkdownMessage({ text }: { text: string }) {
   return (
     <div className="prose-product max-w-none text-[15px] leading-7 text-white/90">
@@ -33,7 +45,7 @@ export function MarkdownMessage({ text }: { text: string }) {
           hr: () => <hr className="border-white/10 my-5" />,
         }}
       >
-        {text}
+        {normalizeHeadingLinks(text)}
       </ReactMarkdown>
     </div>
   );
