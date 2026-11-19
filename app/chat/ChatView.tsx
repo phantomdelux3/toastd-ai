@@ -5,7 +5,12 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft, ArrowUp, Loader2, Sparkles } from "lucide-react";
 import { QuestionCard } from "@/components/QuestionCard";
 import { MarkdownMessage } from "@/components/MarkdownMessage";
-import { tryExtractQuestion, looksLikeQuestionInProgress } from "@/lib/parseAssistant";
+import { CuantoSection, CuantoSectionLoading } from "@/components/CuantoSection";
+import {
+  tryExtractQuestion,
+  looksLikeQuestionInProgress,
+  splitCuanto,
+} from "@/lib/parseAssistant";
 import type { ChatTurn } from "@/lib/types";
 
 type Session = { sessionId: string; userId: string };
@@ -200,19 +205,27 @@ export function ChatView() {
                 </div>
               );
             }
+            const { text: body, cuanto, pending: cuantoPending } = splitCuanto(turn.text);
             return (
               <div key={turn.id} className="flex gap-3 animate-fade-in-up">
                 <AssistantAvatar />
-                <div className="max-w-[92%] w-full rounded-2xl rounded-tl-md bg-white/[0.04] border border-white/[0.06] px-4 py-3 backdrop-blur-sm">
-                  {turn.text && !(streaming && looksLikeQuestionInProgress(turn.text)) ? (
-                    <MarkdownMessage text={turn.text} />
-                  ) : (
-                    <div className="flex items-center gap-1 text-white/60 text-sm py-1">
-                      <span className="thinking-dot" />
-                      <span className="thinking-dot" />
-                      <span className="thinking-dot" />
-                    </div>
-                  )}
+                <div className="max-w-[92%] w-full flex flex-col gap-3">
+                  <div className="w-full rounded-2xl rounded-tl-md bg-white/[0.04] border border-white/[0.06] px-4 py-3 backdrop-blur-sm">
+                    {body && !(streaming && looksLikeQuestionInProgress(body)) ? (
+                      <MarkdownMessage text={body} />
+                    ) : (
+                      <div className="flex items-center gap-1 text-white/60 text-sm py-1">
+                        <span className="thinking-dot" />
+                        <span className="thinking-dot" />
+                        <span className="thinking-dot" />
+                      </div>
+                    )}
+                  </div>
+                  {cuanto ? (
+                    <CuantoSection data={cuanto} />
+                  ) : cuantoPending && streaming ? (
+                    <CuantoSectionLoading />
+                  ) : null}
                 </div>
               </div>
             );
@@ -271,7 +284,7 @@ export function ChatView() {
             </button>
           </form>
           <p className="mt-1.5 text-[11px] text-white/40 text-center">
-            Toastd recommends products via Vertex AI · responses may be inaccurate
+            Toastd recommends products via Vertex AI &amp; Cuanto · responses may be inaccurate
           </p>
         </div>
       </footer>
