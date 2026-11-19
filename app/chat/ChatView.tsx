@@ -5,13 +5,10 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft, ArrowUp, Loader2, Sparkles } from "lucide-react";
 import { QuestionCard } from "@/components/QuestionCard";
 import { MarkdownMessage } from "@/components/MarkdownMessage";
-import { CuantoSection, CuantoSectionLoading } from "@/components/CuantoSection";
-import {
-  tryExtractQuestion,
-  looksLikeQuestionInProgress,
-  splitCuanto,
-} from "@/lib/parseAssistant";
-import type { ChatTurn } from "@/lib/types";
+import { Recommendations, RecommendationsLoading } from "@/components/Recommendations";
+import { tryExtractQuestion, looksLikeQuestionInProgress } from "@/lib/parseAssistant";
+import { emptyCache, extractPicks, mergeCards } from "@/lib/picks";
+import type { CardCache, ChatTurn } from "@/lib/types";
 
 type Session = { sessionId: string; userId: string };
 
@@ -26,6 +23,9 @@ export function ChatView() {
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [inputFocused, setInputFocused] = useState(false);
+  // Structured product cards streamed from the agent's tools, kept for the
+  // whole session so later turns can reference earlier results by id.
+  const [cards, setCards] = useState<CardCache>(emptyCache);
   const sentInitial = useRef(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -78,10 +78,33 @@ export function ChatView() {
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let assembled = "";
+        let buf = "";
+        // NDJSON: {k:"t",v:text} text chunks, {k:"cards",key,items} card data.
+        const consume = (line: string) => {
+          if (!line.trim()) return false;
+          try {
+            const msg = JSON.parse(line);
+            if (msg.k === "t" && typeof msg.v === "string") {
+              assembled += msg.v;
+              return true;
+            }
+            if (msg.k === "cards" && Array.isArray(msg.items)) {
+              setCards((c) => mergeCards(c, msg.key, msg.items));
+            }
+          } catch {
+            /* ignore malformed line */
+          }
+          return false;
+        };
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
-          assembled += decoder.decode(value, { stream: true });
+          buf += decoder.decode(value, { stream: true });
+          const lines = buf.split("\n");
+          buf = lines.pop() ?? "";
+          let changed = false;
+          for (const l of lines) changed = consume(l) || changed;
+          if (!changed) continue;
           setTurns((t) =>
             t.map((tn) =>
               tn.id === placeholderId && tn.role === "assistant"
@@ -90,6 +113,7 @@ export function ChatView() {
             )
           );
         }
+        if (buf) consume(buf);
         const q = tryExtractQuestion(assembled);
         setTurns((t) =>
           t.map((tn) => {
@@ -205,27 +229,35 @@ export function ChatView() {
                 </div>
               );
             }
-            const { text: body, cuanto, pending: cuantoPending } = splitCuanto(turn.text);
+            const { prose, picks, pending: picksPending } = extractPicks(turn.text);
+            const showBubble =
+              !picks && !picksPending && !(streaming && looksLikeQuestionInProgress(turn.text));
             return (
               <div key={turn.id} className="flex gap-3 animate-fade-in-up">
                 <AssistantAvatar />
                 <div className="max-w-[92%] w-full flex flex-col gap-3">
-                  <div className="w-full rounded-2xl rounded-tl-md bg-white/[0.04] border border-white/[0.06] px-4 py-3 backdrop-blur-sm">
-                    {body && !(streaming && looksLikeQuestionInProgress(body)) ? (
-                      <MarkdownMessage text={body} />
-                    ) : (
+                  {prose && (picks || picksPending) && (
+                    <div className="w-full rounded-2xl rounded-tl-md bg-white/[0.04] border border-white/[0.06] px-4 py-3 backdrop-blur-sm">
+                      <MarkdownMessage text={prose} />
+                    </div>
+                  )}
+                  {picks ? (
+                    <Recommendations picks={picks} cache={cards} />
+                  ) : picksPending || (streaming && turn.text.trimStart().startsWith("```p")) ? (
+                    <RecommendationsLoading />
+                  ) : showBubble && turn.text ? (
+                    <div className="w-full rounded-2xl rounded-tl-md bg-white/[0.04] border border-white/[0.06] px-4 py-3 backdrop-blur-sm">
+                      <MarkdownMessage text={turn.text} />
+                    </div>
+                  ) : (
+                    <div className="w-full rounded-2xl rounded-tl-md bg-white/[0.04] border border-white/[0.06] px-4 py-3 backdrop-blur-sm">
                       <div className="flex items-center gap-1 text-white/60 text-sm py-1">
                         <span className="thinking-dot" />
                         <span className="thinking-dot" />
                         <span className="thinking-dot" />
                       </div>
-                    )}
-                  </div>
-                  {cuanto ? (
-                    <CuantoSection data={cuanto} />
-                  ) : cuantoPending && streaming ? (
-                    <CuantoSectionLoading />
-                  ) : null}
+                    </div>
+                  )}
                 </div>
               </div>
             );
