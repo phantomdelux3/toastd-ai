@@ -169,8 +169,8 @@ export type ResolvedSection = {
 const MAX_MORE = 6;
 
 /**
- * Joins pick ids with cached cards (unknown ids are dropped). If the model
- * gave no `*_more` ids, fall back to other results from the same search
+ * Joins pick ids with cached cards (unknown ids are dropped). "More" is the
+ * model's *_more ids, topped up with other results from the same search
  * queries as its main picks — on-topic by construction, zero model tokens.
  */
 export function resolveSection(
@@ -195,11 +195,16 @@ export function resolveSection(
     }
   }
 
-  if (more.length === 0 && main.length > 0) {
+  // Top up with other results from the same queries as the main picks.
+  if (more.length < MAX_MORE && main.length > 0) {
     const queries = new Set(main.map((m) => m.card.query).filter(Boolean));
-    more = Object.values(cards).filter(
-      (c) => !used.has(c.id) && !!c.query && queries.has(c.query)
-    );
+    for (const c of Object.values(cards)) {
+      if (more.length >= MAX_MORE) break;
+      if (!used.has(c.id) && !!c.query && queries.has(c.query)) {
+        used.add(c.id);
+        more.push(c);
+      }
+    }
   }
   return { main, more: more.slice(0, MAX_MORE) };
 }
